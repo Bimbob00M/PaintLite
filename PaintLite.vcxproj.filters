@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\Drawer">
+      <UniqueIdentifier>{2e3069ba-10a6-4ce6-a6ad-dcc06d9aff9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Drawer\DrawerTools">
+      <UniqueIdentifier>{e5d52404-29b3-443a-b0ff-cd2c9731b567}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Drawer">
+      <UniqueIdentifier>{911f787a-ac24-4215-8989-6b680727a803}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Drawer\DrawerTools">
+      <UniqueIdentifier>{ad3ae3cd-1eff-406f-8031-d6b885adcce7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\PaintLite.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\small.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\PaintLite.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\framework.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base_window.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\main_window.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\constant.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\canvas.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="res\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gdiplus_starup_wrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pencil.h">
+      <Filter>Header Files\Drawer\DrawerTools</Filter>
+    </ClInclude>
+    <ClInclude Include="src\drawer.h">
+      <Filter>Header Files\Drawer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\line.h">
+      <Filter>Header Files\Drawer\DrawerTools</Filter>
+    </ClInclude>
+    <ClInclude Include="src\drawing_tool.h">
+      <Filter>Header Files\Drawer\DrawerTools</Filter>
+    </ClInclude>
+    <ClInclude Include="src\drawing_toolkit.h">
+      <Filter>Header Files\Drawer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rectangle.h">
+      <Filter>Header Files\Drawer\DrawerTools</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ellipse.h">
+      <Filter>Header Files\Drawer\DrawerTools</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main_window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\constant.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\canvas.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gdiplus_starup_wrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pencil.cpp">
+      <Filter>Source Files\Drawer\DrawerTools</Filter>
+    </ClCompile>
+    <ClCompile Include="src\drawer.cpp">
+      <Filter>Source Files\Drawer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\line.cpp">
+      <Filter>Source Files\Drawer\DrawerTools</Filter>
+    </ClCompile>
+    <ClCompile Include="src\drawing_tool.cpp">
+      <Filter>Source Files\Drawer\DrawerTools</Filter>
+    </ClCompile>
+    <ClCompile Include="src\drawing_toolkit.cpp">
+      <Filter>Source Files\Drawer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rectangle.cpp">
+      <Filter>Source Files\Drawer\DrawerTools</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ellipse.cpp">
+      <Filter>Source Files\Drawer\DrawerTools</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
