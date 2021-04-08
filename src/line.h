@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/drawing_tool.h"
+#include "drawing_tool.h"
 
 namespace PaintLite
 {
@@ -9,8 +9,9 @@ namespace PaintLite
     public:
         Line() noexcept;
         Line( const Gdiplus::Color& color, const Gdiplus::REAL width = 1.F ) noexcept;
+        Line( const Gdiplus::Pen& pen ) noexcept;
 
-        void draw( Gdiplus::Graphics& graphics ) const noexcept override;
+        void draw( Gdiplus::Graphics& graphics, bool shiftPressed = false ) const noexcept override;
 
         std::array<int, 4> getPossibleThickness() const override;
     };

@@ -19,7 +19,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\bitmap1.bmp" />
+    <Image Include="res\save.bmp" />
+    <Image Include="res\save_as.bmp" />
+    <Image Include="res\brush.bmp" />
+    <Image Include="res\ellipse.bmp" />
+    <Image Include="res\line.bmp" />
+    <Image Include="res\load.bmp" />
+    <Image Include="res\new.bmp" />
+    <Image Include="res\eraser.bmp" />
+    <Image Include="res\dropper.bmp" />
+    <Image Include="res\palette.bmp" />
+    <Image Include="res\rectangle.bmp" />
+    <Image Include="res\pensil.bmp" />
     <Image Include="res\PaintLite.ico" />
     <Image Include="res\small.ico" />
   </ItemGroup>
@@ -28,7 +39,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\canvas.cpp" />
-    <ClCompile Include="src\constant.cpp" />
+    <ClCompile Include="src\canvas_window.cpp" />
+    <ClCompile Include="src\eraser.cpp" />
+    <ClCompile Include="src\gdiplus_helper_functions.cpp" />
+    <ClCompile Include="src\global.cpp" />
     <ClCompile Include="src\drawing_toolkit.cpp" />
     <ClCompile Include="src\ellipse.cpp" />
     <ClCompile Include="src\gdiplus_starup_wrapper.cpp" />
@@ -39,12 +53,16 @@
     <ClCompile Include="src\drawing_tool.cpp" />
     <ClCompile Include="src\pencil.cpp" />
     <ClCompile Include="src\rectangle.cpp" />
+    <ClCompile Include="src\save_load_manager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="res\resource.h" />
     <ClInclude Include="src\base_window.hpp" />
     <ClInclude Include="src\canvas.h" />
-    <ClInclude Include="src\constant.h" />
+    <ClInclude Include="src\canvas_window.h" />
+    <ClInclude Include="src\eraser.h" />
+    <ClInclude Include="src\gdiplus_helper_functions.h" />
+    <ClInclude Include="src\global.h" />
     <ClInclude Include="src\drawing_toolkit.h" />
     <ClInclude Include="src\ellipse.h" />
     <ClInclude Include="src\framework.h" />
@@ -55,6 +73,7 @@
     <ClInclude Include="src\drawing_tool.h" />
     <ClInclude Include="src\pencil.h" />
     <ClInclude Include="src\rectangle.h" />
+    <ClInclude Include="src\save_load_manager.h" />
     <ClInclude Include="src\targetver.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -116,6 +135,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformShortName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -124,6 +145,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformShortName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -134,13 +157,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Tupa comp\source\repos\PaintLite;C:\Users\Tupa comp\source\repos\PaintLite\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir);$(ProjectDir)res;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Tupa comp\source\repos\PaintLite;C:\Users\Tupa comp\source\repos\PaintLite\src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>comctl32.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir);$(ProjectDir)src;$(ProjectDir)res;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gdiplus.lib;Gdiplus.lib;Comctl32.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <ResourceOutputFileName>$(SolutionDir)res\%(Filename).res</ResourceOutputFileName>
@@ -156,11 +179,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir);$(ProjectDir)res;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>comctl32.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdiplus.lib;Gdiplus.lib;Comctl32.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir);$(ProjectDir)src;$(ProjectDir)res;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -174,15 +199,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Tupa comp\source\repos\PaintLite;C:\Users\Tupa comp\source\repos\PaintLite\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir);$(ProjectDir)res;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Tupa comp\source\repos\PaintLite;C:\Users\Tupa comp\source\repos\PaintLite\src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>comctl32.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir);$(ProjectDir)src;$(ProjectDir)res;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gdiplus.lib;Gdiplus.lib;Comctl32.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <ResourceOutputFileName>$(SolutionDir)res\%(Filename).res</ResourceOutputFileName>
@@ -200,13 +225,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir);$(ProjectDir)res;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>comctl32.lib;gdiplus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdiplus.lib;Gdiplus.lib;Comctl32.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir);$(ProjectDir)src;$(ProjectDir)res;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

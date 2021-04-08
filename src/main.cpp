@@ -1,8 +1,11 @@
-#include "src/constant.h"
-#include "src/framework.h"
-#include "src/main_window.h"
+#pragma comment(lib, "gdiplus.lib")
+#pragma comment(lib, "shlwapi.lib")
+#pragma comment(lib, "Comctl32.lib")
 
+#include "global.h"
+#include "framework.h"
 #include "gdiplus_starup_wrapper.h"
+#include "main_window.h"
 
 int APIENTRY wWinMain( _In_ HINSTANCE hInstance,
                        _In_opt_ HINSTANCE /*hPrevInstance*/,
@@ -19,7 +22,7 @@ int APIENTRY wWinMain( _In_ HINSTANCE hInstance,
     int winHeight = screenHeight / 2;
 
     PaintLite::MainWindow win;
-    if( !win.create( PaintLite::g_AppName.c_str(),
+    if( !win.create( PaintLite::APP_NAME.c_str(),
                      WS_OVERLAPPEDWINDOW,
                      NULL,
                      ( screenWidth - winWidth ) / 2,

@@ -1,63 +1,65 @@
 #pragma once
 
 #include <Windows.h>
+#include <commctrl.h>
 
-#include "src/base_window.hpp"
-#include "src/canvas.h"
-#include "src/drawer.h"
-#include "src/drawing_toolkit.h"
-#include "src/pencil.h"
-#include "src/line.h"
-#include "src/rectangle.h"
-#include "src/ellipse.h"
+#include "base_window.hpp"
+#include "canvas_window.h"
+#include "drawing_tool.h"
 
 namespace PaintLite
-{    
+{
     class MainWindow : public BaseWindow<MainWindow>
     {
-    public:
-        MainWindow();
-
-        PCWSTR  className() const;
-        LRESULT handleMessage( UINT msg, WPARAM wParam, LPARAM lParam );
+    public:        
+        inline PCWSTR  className() const override { return L"Main Window"; };
+        LRESULT handleMessage( UINT msg, WPARAM wParam, LPARAM lParam ) override;
 
     protected:
-        virtual void initWndClass( WNDCLASS& outWndClass ) const;
+        virtual void initWndClass( WNDCLASS& outWndClass ) const override;
+        
+        virtual bool onCreate( HWND hWnd, LPCREATESTRUCT lpCreateStruct );
+        virtual void onCommand( HWND hWnd, int id, HWND hwndCtl, UINT codeNotify );
+        virtual void onPaint( HWND hWnd );
+        virtual void onSize( HWND hWnd, UINT state, int width, int height );
+        virtual void onMouseMove( HWND hWnd, int x, int y, UINT keyFlags );
+        virtual void onLBtnDown( HWND hWnd, bool dblClick, int x, int y, UINT keyFlags );
+        virtual void onLBtnUp( HWND hWnd, int x, int y, UINT keyFlags );
+        virtual void onRBtnDown( HWND hWnd, bool dblClick, int x, int y, UINT keyFlags );
+        virtual void onClose( HWND hWnd );
+        virtual void onDestroy( HWND hWnd );
 
-        virtual LRESULT onPaint( WPARAM wParam, LPARAM lParam );
-        virtual LRESULT onSize( WPARAM wParam, LPARAM lParam );
-        virtual LRESULT onClose( WPARAM wParam, LPARAM lParam );
+        bool createToolbar();
 
-    private:
-        //DrawingToolkit m_toolkit{};
-        Canvas m_winCanvas;
-        Canvas m_drawerCanvas;
-        Drawer m_drawer;
+    private:        
+        enum EResizeRect { eRR_NONE, eRR_BOTTOM, eRR_RIGHT, eRR_BOTTOM_RIGHT };
 
-        Pencil m_tool;   
+        CanvasWindow m_canvasWin;
+        HIMAGELIST m_toolbarIcons{ nullptr };
+        HWND m_toolbar{ nullptr };
+        
+        Gdiplus::Rect m_canvasRect{};
 
-        HWND m_hToolbar;
+        Gdiplus::Rect m_bottomCanvasWin{};
+        Gdiplus::Rect m_rightCanvasWin{};
+        Gdiplus::Rect m_bottomRightCanvasWin{};
 
-        bool createToolbar( HWND hParent );
+        Gdiplus::Point m_resizeEndPoint{};
 
+        EResizeRect m_resizeType{};
+        bool m_resizeCanvasWinFlag{ false };
 
+        HIMAGELIST loadToolbarIcons( const int numButtons );
+        Gdiplus::Bitmap* createColorBitmap( COLORREF color, int width, int height ) const;
+
+        bool checkResizeRectCollision( const Gdiplus::Rect& target, const Gdiplus::Point& mousePos ) const noexcept;
+        void drawResizeRects( Gdiplus::Graphics* graphics ) const noexcept;
+        void drawResizeArea( Gdiplus::Graphics* graphics ) const noexcept;
+
+        const int getToolbarHeight() const noexcept;
+
+        void calculateCanvasWinRect( RECT& clientArea, const int toolbarHeight ) noexcept;
+        void calculateResizeRectsPos() noexcept;
     };
-
-    //**********************************************************************************************************
-
-    inline PCWSTR MainWindow::className() const
-    {
-        return L"Main Window";
-    }
-
-    //--------------------------------------------------------------------------------------------------------------
-
-    inline void MainWindow::initWndClass( WNDCLASS& outWndClass ) const
-    {
-        BaseWindow::initWndClass( outWndClass );
-
-        outWndClass.hIcon = LoadIcon( GetModuleHandle( nullptr ), MAKEINTRESOURCE( IDI_PAINTLITE ) );
-        outWndClass.hCursor = LoadCursor( nullptr, IDC_ARROW );
-    }
 
 }//namespace Paint

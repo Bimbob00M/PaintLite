@@ -13,34 +13,37 @@ namespace PaintLite
         DrawingTool() noexcept;
         DrawingTool( const Gdiplus::Color& color, const Gdiplus::REAL width = 1.F ) noexcept;
         DrawingTool( const Gdiplus::Brush* brush, const Gdiplus::REAL width = 1.F ) noexcept;
-        virtual ~DrawingTool() = default;
+        DrawingTool( const Gdiplus::Pen& pen ) noexcept;
+        
+        DrawingTool( const DrawingTool& tool ) noexcept;
+        DrawingTool& operator=( const DrawingTool& tool ) noexcept;
 
-        virtual void draw( Gdiplus::Graphics& graphics) const noexcept = 0;
+        virtual ~DrawingTool();
 
+        virtual void draw( Gdiplus::Graphics& graphics, bool shiftPressed = false ) const noexcept = 0;
         virtual std::array<int, 4> getPossibleThickness() const = 0;
+                
+        inline const Gdiplus::Pen& getPen() const noexcept { return *m_pen; }
+        inline Gdiplus::Pen& getPen() noexcept { return *m_pen; }
 
+        inline void setStartPoint( const Gdiplus::Point& startPoint ) noexcept { m_startPoint = startPoint; }
+        inline void setEndPoint( const Gdiplus::Point& endPoint ) noexcept { m_endPoint = endPoint; }
 
-        inline const Gdiplus::Pen& getPen() const noexcept;
-        inline Gdiplus::Pen& getPen() noexcept;
+        inline void setCurrMousePos( const Gdiplus::Point& currPos ) noexcept {  m_currMousePos = currPos; }
+        inline void setPrevMousePos( const Gdiplus::Point& prevPos ) noexcept { m_prevMousePos = prevPos; }
 
-        inline void setStartPoint( const Gdiplus::Point& startPoint ) noexcept;
-        inline void setEndPoint( const Gdiplus::Point& endPoint ) noexcept;
+        void setThickness( const Gdiplus::REAL thickness ) noexcept;
 
-        inline void setCurrMousePos( const Gdiplus::Point& startPoint ) noexcept;
-        inline void setPrevMousePos( const Gdiplus::Point& endPoint ) noexcept;
+        inline Gdiplus::Point getStartPoint() const noexcept { return m_startPoint; }
+        inline Gdiplus::Point getEndPoint() const noexcept { return m_endPoint; }
 
-        inline void setThickness( const Gdiplus::REAL thickness ) noexcept;
+        inline Gdiplus::Point getCurrMousePos() const noexcept { return m_currMousePos; }
+        inline Gdiplus::Point getPrevMousePos() const noexcept { return m_prevMousePos; }
 
-        inline Gdiplus::Point getStartPoint() const noexcept;
-        inline Gdiplus::Point getEndPoint() const noexcept;
-
-        inline Gdiplus::Point getCurrMousePos() const noexcept;
-        inline Gdiplus::Point getPrevMousePos() const noexcept;
-
-        inline Gdiplus::REAL getThickness() const noexcept;
-
+        inline Gdiplus::REAL getThickness() const noexcept { return m_thickness; }
+        
     protected:
-        Gdiplus::Pen m_pen;
+        Gdiplus::Pen* m_pen{ nullptr };
 
         Gdiplus::Point m_startPoint{};
         Gdiplus::Point m_endPoint{};
@@ -48,68 +51,7 @@ namespace PaintLite
         Gdiplus::Point m_currMousePos{};
         Gdiplus::Point m_prevMousePos{};
 
-        Gdiplus::REAL m_thickness;
-    };
-
-    //***********************************************************************************
-
-    inline const Gdiplus::Pen& DrawingTool::getPen() const noexcept
-    {
-        return m_pen;
-    }
-
-    inline Gdiplus::Pen& DrawingTool::getPen() noexcept
-    {
-        return m_pen;
-    }
-
-    inline void DrawingTool::setStartPoint( const Gdiplus::Point& startPoint ) noexcept
-    {
-        m_startPoint = startPoint;
-    }
-
-    inline void DrawingTool::setEndPoint( const Gdiplus::Point& endPoint ) noexcept
-    {
-        m_endPoint = endPoint;
-    }
-
-    inline void DrawingTool::setCurrMousePos( const Gdiplus::Point& currPos ) noexcept
-    {
-        m_currMousePos = currPos;
-    }
-
-    inline void DrawingTool::setPrevMousePos( const Gdiplus::Point& prevPos ) noexcept
-    {
-        m_prevMousePos = prevPos;
-    }
-
-    inline void DrawingTool::setThickness( const Gdiplus::REAL thickness ) noexcept
-    {
-        m_thickness = thickness;
-    }
-
-    inline Gdiplus::Point DrawingTool::getStartPoint() const noexcept
-    {
-        return m_startPoint;
-    }
-
-    inline Gdiplus::Point DrawingTool::getEndPoint() const noexcept
-    {
-        return m_endPoint;
-    }
-
-    inline Gdiplus::Point DrawingTool::getCurrMousePos() const noexcept
-    {
-        return m_currMousePos;
-    }
-
-    inline Gdiplus::Point DrawingTool::getPrevMousePos() const noexcept
-    {
-        return m_prevMousePos;
-    }
-    inline Gdiplus::REAL DrawingTool::getThickness() const noexcept
-    {
-        return m_thickness;
-    }
+        Gdiplus::REAL m_thickness{ 1.F };
+    };        
 }
 

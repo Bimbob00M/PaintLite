@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-#include "res/resource.h"
+#include "resource.h"
 
 namespace PaintLite
 {
@@ -10,7 +10,8 @@ namespace PaintLite
     class BaseWindow
     {
     public:
-        BaseWindow() : m_hWnd( nullptr )
+        BaseWindow() 
+            : m_hWnd( nullptr )
         {}
 
         virtual ~BaseWindow()
@@ -34,6 +35,7 @@ namespace PaintLite
                      HMENU hMenu = 0 );
 
         BOOL show( int nCmdShow );
+        BOOL invalidateRect( const RECT* rect, bool erase = false ) { return InvalidateRect( m_hWnd, rect, erase ); };
         BOOL update();
         
         HWND getWindowHandle() const;
@@ -99,10 +101,9 @@ namespace PaintLite
                                            HWND hWndParent,
                                            HMENU hMenu )
     {
-        if( !registerClass() )
-        {
+        if( !registerClass() )        
             return false;
-        }
+        
 
         m_hWnd = CreateWindowEx( dwExStyle,
                                  className(),
