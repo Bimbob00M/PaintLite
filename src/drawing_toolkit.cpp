@@ -23,21 +23,14 @@ namespace PaintLite
     
     const DrawingTool* DrawingToolkit::getTool( EToolbarIDs key ) const noexcept
     {
-        auto it = m_tools.find( key );
-        if( it != m_tools.end() )
-        {
-            return it->second.get();
-        }
+        auto toolPair = m_tools.find( key );
+        if( toolPair != m_tools.end() )
+            return toolPair->second.get();
         return nullptr;
     }
 
     DrawingTool* DrawingToolkit::getTool( EToolbarIDs key ) noexcept
     {
-        auto it = m_tools.find( key );
-        if( it != m_tools.end() )
-        {
-            return it->second.get();
-        }
-        return nullptr;
+        return m_tools[key].get();
     }
 }

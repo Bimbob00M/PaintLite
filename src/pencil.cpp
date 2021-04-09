@@ -20,9 +20,4 @@ namespace PaintLite
     {
         graphics.DrawLine( m_pen, m_prevMousePos, m_currMousePos );
     }
-
-    std::array<int, 4> Pencil::getPossibleThickness() const
-    {
-        return { 1, 2, 3, 4 };
-    }
 }

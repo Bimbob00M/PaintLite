@@ -23,7 +23,6 @@ namespace PaintLite
                 bool useEmbeddedColorManagment = false);
 
         Canvas( Gdiplus::Bitmap& bitmap );
-        //Canvas( Gdiplus::Bitmap& bitmap, const Color& bkgndColor = Gdiplus::Color::White ) noexcept;
 
         virtual ~Canvas();
 
@@ -39,6 +38,9 @@ namespace PaintLite
 
         Canvas( const Canvas& ) = delete;
         Canvas& operator=( const Canvas& ) = delete;
+
+        Canvas( Canvas&& ) = delete;
+        Canvas& operator=( Canvas&& ) = delete;
     };    
 }
 

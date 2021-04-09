@@ -15,13 +15,11 @@
 #define ID_SAVE                         999
 #define ID_RECT                         1000
 #define ID_PENSIL                       1001
-#define ID_PALETTE                      1002
-#define ID_NEW                          1003
-#define ID_LOAD                         1004
-#define ID_LINE                         1005
-#define ID_ERASER                       1006
-#define ID_ELLIPSE                      1007
-#define ID_DROPPER                      1008
+#define ID_NEW                          1002
+#define ID_LOAD                         1003
+#define ID_LINE                         1004
+#define ID_ERASER                       1005
+#define ID_ELLIPSE                      1006
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

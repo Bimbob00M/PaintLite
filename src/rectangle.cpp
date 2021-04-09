@@ -37,9 +37,4 @@ namespace PaintLite
         graphics.Clear( Color::Transparent );
         graphics.DrawRectangle( m_pen, x, y, width, height );
     }
-
-    std::array<int, 4> Rectangle::getPossibleThickness() const
-    {
-        return { 1, 3, 5, 8 };
-    }
 }

@@ -20,9 +20,4 @@ namespace PaintLite
     {
         graphics.DrawLine( m_pen, m_prevMousePos, m_currMousePos );
     }
-
-    std::array<int, 4> Eraser::getPossibleThickness() const
-    {
-        return { 4, 6, 8, 10 };
-    }
 }

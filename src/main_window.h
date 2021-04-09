@@ -22,10 +22,10 @@ namespace PaintLite
         virtual void onCommand( HWND hWnd, int id, HWND hwndCtl, UINT codeNotify );
         virtual void onPaint( HWND hWnd );
         virtual void onSize( HWND hWnd, UINT state, int width, int height );
+        virtual void onCanvasSize( int width, int height );
         virtual void onMouseMove( HWND hWnd, int x, int y, UINT keyFlags );
         virtual void onLBtnDown( HWND hWnd, bool dblClick, int x, int y, UINT keyFlags );
         virtual void onLBtnUp( HWND hWnd, int x, int y, UINT keyFlags );
-        virtual void onRBtnDown( HWND hWnd, bool dblClick, int x, int y, UINT keyFlags );
         virtual void onClose( HWND hWnd );
         virtual void onDestroy( HWND hWnd );
 
@@ -45,6 +45,9 @@ namespace PaintLite
         Gdiplus::Rect m_bottomRightCanvasWin{};
 
         Gdiplus::Point m_resizeEndPoint{};
+        
+        HDC m_memDC{ nullptr };
+        HBITMAP m_memBitmap{ nullptr };
 
         EResizeRect m_resizeType{};
         bool m_resizeCanvasWinFlag{ false };
@@ -54,12 +57,9 @@ namespace PaintLite
 
         bool checkResizeRectCollision( const Gdiplus::Rect& target, const Gdiplus::Point& mousePos ) const noexcept;
         void drawResizeRects( Gdiplus::Graphics* graphics ) const noexcept;
-        void drawResizeArea( Gdiplus::Graphics* graphics ) const noexcept;
-
-        const int getToolbarHeight() const noexcept;
-
-        void calculateCanvasWinRect( RECT& clientArea, const int toolbarHeight ) noexcept;
         void calculateResizeRectsPos() noexcept;
+
+        int getToolbarHeight() const noexcept;
     };
 
 }//namespace Paint

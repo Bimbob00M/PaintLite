@@ -12,7 +12,5 @@ namespace PaintLite
         Line( const Gdiplus::Pen& pen ) noexcept;
 
         void draw( Gdiplus::Graphics& graphics, bool shiftPressed = false ) const noexcept override;
-
-        std::array<int, 4> getPossibleThickness() const override;
     };
 }

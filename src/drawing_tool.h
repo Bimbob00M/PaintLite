@@ -21,7 +21,7 @@ namespace PaintLite
         virtual ~DrawingTool();
 
         virtual void draw( Gdiplus::Graphics& graphics, bool shiftPressed = false ) const noexcept = 0;
-        virtual std::array<int, 4> getPossibleThickness() const = 0;
+        virtual std::array<int, 4> getPossibleThickness() const { return { 1, 3, 5, 8 }; }
                 
         inline const Gdiplus::Pen& getPen() const noexcept { return *m_pen; }
         inline Gdiplus::Pen& getPen() noexcept { return *m_pen; }

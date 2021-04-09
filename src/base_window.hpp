@@ -51,6 +51,9 @@ namespace PaintLite
     private:
         BaseWindow( const BaseWindow<DERIVED_TYPE>& ) = delete;
         BaseWindow<DERIVED_TYPE>& operator=( const BaseWindow<DERIVED_TYPE>& ) = delete;
+        
+        BaseWindow( BaseWindow<DERIVED_TYPE>&& ) = delete;
+        BaseWindow<DERIVED_TYPE>& operator=( BaseWindow<DERIVED_TYPE>&& ) = delete;
 
         ATOM registerClass() const;
     };

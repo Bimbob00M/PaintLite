@@ -4,6 +4,7 @@
 #include <commctrl.h>
 #include <gdiplus.h>
 
+#include <algorithm>
 #include <string>
 
 #include "drawing_tool.h"
@@ -21,8 +22,7 @@ namespace PaintLite
     LRESULT MainWindow::handleMessage( UINT msg, WPARAM wParam, LPARAM lParam )
     {
         switch( msg )
-        {
-            
+        {            
             HANDLE_MSG( m_hWnd, WM_CREATE, onCreate );
             HANDLE_MSG( m_hWnd, WM_COMMAND, onCommand );
             HANDLE_MSG( m_hWnd, WM_PAINT, onPaint );
@@ -30,9 +30,12 @@ namespace PaintLite
             HANDLE_MSG( m_hWnd, WM_LBUTTONDOWN, onLBtnDown );
             HANDLE_MSG( m_hWnd, WM_LBUTTONUP, onLBtnUp );
             HANDLE_MSG( m_hWnd, WM_MOUSEMOVE, onMouseMove );
-            HANDLE_MSG( m_hWnd, WM_RBUTTONDOWN, onRBtnDown );
             HANDLE_MSG( m_hWnd, WM_CLOSE, onClose );
             HANDLE_MSG( m_hWnd, WM_DESTROY, onDestroy );
+
+            case UM_CANVAS_SIZE:
+                onCanvasSize( wParam, lParam );
+                break;
 
             default:
                 return DefWindowProc( m_hWnd, msg, wParam, lParam );
@@ -57,9 +60,14 @@ namespace PaintLite
         RECT clientRc; 
         GetClientRect( m_hWnd, &clientRc );
         const int toolbarHeight = getToolbarHeight();
-        clientRc.bottom -= toolbarHeight;
-        calculateCanvasWinRect( clientRc, toolbarHeight );
-        calculateResizeRectsPos();
+
+        const int topLeftOffset = 5;
+        const int bottomRightOffset = 15; // topLeftOffset * 2 + 5( reserve for rectangles resizing)
+
+        m_canvasRect = Rect( clientRc.left + topLeftOffset,
+                             clientRc.top + topLeftOffset + toolbarHeight,
+                             clientRc.right - bottomRightOffset,
+                             clientRc.bottom - bottomRightOffset - toolbarHeight );
 
         auto result = m_canvasWin.create( nullptr,
                                           WS_CHILD | WS_VISIBLE,
@@ -71,7 +79,7 @@ namespace PaintLite
                                           m_hWnd,
                                           reinterpret_cast<HMENU>( ID_CANVAS_WIN ) );
 
-        
+        calculateResizeRectsPos();        
 
         return result;
     }
@@ -81,12 +89,6 @@ namespace PaintLite
         switch( id )
         {
             case eTID_NEW:
-            {
-                m_canvasWin.clear();
-                m_canvasWin.invalidateRect( nullptr );
-                break;
-
-            }
             case eTID_LOAD:
             case eTID_SAVE:
             case eTID_SAVE_AS:
@@ -100,11 +102,11 @@ namespace PaintLite
             case eTID_THICK_3:
             case eTID_THICK_4:
             {
-                auto hCanvasWin = m_canvasWin.getWindowHandle();
-                SendMessage( hCanvasWin, UM_TOOLBAR_COMMAND, id, reinterpret_cast<LPARAM>( hCanvasWin ) );
+                SendMessage( m_canvasWin.getWindowHandle(), UM_TOOLBAR_COMMAND, id, 0 );
                 break;
             }
-            case eTID_PALETTE:
+            case eTID_MAIN_COLOR:
+            case eTID_ADDITIONAL_COLOR:
             {
                 CHOOSECOLOR cc{};                     // common dialog box structure 
                 static COLORREF s_customColors[16];   // array of custom colors by default black
@@ -120,19 +122,18 @@ namespace PaintLite
                 {
                     s_rgbCurrent = cc.rgbResult;
 
-                    constexpr int mainColorBtnIndex = eTID_MAIN_COLOR - eTID_NEW;
+                    const int colorBtnIndex = id - eTID_NEW;
+                    constexpr int numSeparators = 2; // separators before target button
 
                     HBITMAP newIcon = nullptr;
                     Bitmap* bitmap = createColorBitmap( s_rgbCurrent, 48, 48 );
                     bitmap->GetHBITMAP( {}, &newIcon );
-                    ImageList_Replace( m_toolbarIcons, mainColorBtnIndex - 2, newIcon, 0 );
+                    ImageList_Replace( m_toolbarIcons, colorBtnIndex - numSeparators, newIcon, 0 );
                     DeleteObject( newIcon );
                     delete bitmap;
-                    SendMessage( m_toolbar, TB_CHANGEBITMAP, eTID_MAIN_COLOR, mainColorBtnIndex - 2 );
 
-                    auto hCanvasWin = m_canvasWin.getWindowHandle();
-                    auto isMainColorBtnChecked = SendMessage( m_toolbar, TB_ISBUTTONCHECKED, mainColorBtnIndex, NULL );
-                    SendMessage( hCanvasWin, UM_TOOLBAR_COMMAND, MAKEWPARAM(id, isMainColorBtnChecked), static_cast<LPARAM>( s_rgbCurrent ) );
+                    SendMessage( m_toolbar, TB_CHANGEBITMAP, id, colorBtnIndex - numSeparators );
+                    SendMessage( m_canvasWin.getWindowHandle(), UM_TOOLBAR_COMMAND, id, static_cast<LPARAM>( s_rgbCurrent ) );
                 }
                 break;
             }
@@ -146,54 +147,87 @@ namespace PaintLite
     {
         PAINTSTRUCT ps;
         BeginPaint( hWnd, &ps );
-
-        const int width = ps.rcPaint.right - ps.rcPaint.left;
-        const int height = ps.rcPaint.bottom - ps.rcPaint.top;
-        
-        HDC hMemDC = CreateCompatibleDC( ps.hdc );
-        HBITMAP hMemBitmap = CreateCompatibleBitmap( ps.hdc, width, height );
-        HGDIOBJ oldBitmap = SelectObject( hMemDC, hMemBitmap );
-        HBRUSH bkgndBrush = GetStockBrush( LTGRAY_BRUSH );
-        HGDIOBJ oldBrush = SelectObject( hMemDC, bkgndBrush );
-
-        FillRect( hMemDC, &ps.rcPaint, bkgndBrush );
-
-        Graphics g( hMemDC );        
-        if( !m_resizeCanvasWinFlag )
+            
+        HBRUSH bkgnd = GetStockBrush( LTGRAY_BRUSH );
+        if( m_resizeCanvasWinFlag )
         {
+            const int width = ps.rcPaint.right - ps.rcPaint.left;
+            const int height = ps.rcPaint.bottom - ps.rcPaint.top;
+
+            auto dc = m_memDC ? m_memDC : ps.hdc;
+            Graphics g( dc ); 
+            FillRect( dc, &ps.rcPaint, bkgnd );
             drawResizeRects( &g );
+
+            if( m_memDC )
+                BitBlt( ps.hdc, 0, 0, width, height, m_memDC, 0, 0, SRCCOPY );
         }
         else
         {
-            drawResizeArea( &g );
+            Graphics g( ps.hdc );
+            FillRect( ps.hdc, &ps.rcPaint, bkgnd );
+            drawResizeRects( &g );
         }
-
-        BitBlt( ps.hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY );
-
-        DeleteObject( SelectObject( hMemDC, oldBitmap ) );
-        DeleteObject( SelectObject( hMemDC, oldBrush ) );
-        DeleteDC( hMemDC );
+        DeleteObject( bkgnd );
 
         EndPaint( hWnd, &ps );
     }
 
     void MainWindow::onSize( HWND hWnd, UINT state, int width, int height )
+    {  
+        SendMessage( m_toolbar, TB_AUTOSIZE, state, MAKELPARAM( width, height ) );        
+    }
+
+    void MainWindow::onCanvasSize( int width, int height )
     {
-        SendMessage( m_toolbar, TB_AUTOSIZE, state, MAKELPARAM( width, height ) );
+        m_canvasRect.Width = width;
+        m_canvasRect.Height = height;
+        calculateResizeRectsPos();
+        invalidateRect( nullptr );
     }
 
     void MainWindow::onMouseMove( HWND hWnd, int x, int y, UINT keyFlags )
     {
+
         if( m_resizeCanvasWinFlag )
         {
+            RECT clientArea;
+            GetClientRect( m_hWnd, &clientArea );
+                       
+            bool mouseCompletelyOutsideClientArea = ( x < clientArea.left && y < clientArea.top ) ||
+                                                    ( x > clientArea.right && y > clientArea.bottom );
+
+            if( mouseCompletelyOutsideClientArea )
+                return;
+
             m_resizeEndPoint = Point( x, y );
+
+            int width = m_resizeEndPoint.X - m_canvasRect.X;
+            int height = m_resizeEndPoint.Y - m_canvasRect.Y;
+
+            if( m_resizeType == eRR_BOTTOM )
+            {
+                width = m_canvasRect.Width;
+            }
+            else if( m_resizeType == eRR_RIGHT )
+            {
+                height = m_canvasRect.Height;
+            }
+
+            const int offset = 15;
+            m_canvasRect.Width = std::clamp( width, 1, static_cast<int>( clientArea.right - offset ) );
+            m_canvasRect.Height = std::clamp( height, 1, static_cast<int>( clientArea.bottom - offset - getToolbarHeight() ) );
+
+            SetWindowPos( m_canvasWin.getWindowHandle(), 0, 0, 0, m_canvasRect.Width, m_canvasRect.Height, SWP_NOMOVE );
+            calculateResizeRectsPos();
+
             invalidateRect( nullptr );
         }
     }
 
     void MainWindow::onLBtnDown( HWND hWnd, bool dblClick, int x, int y, UINT keyFlags )
     {
-        SetCapture( hWnd );
+        SetCapture( m_hWnd );
         Point mousePos( x, y );
 
         if( checkResizeRectCollision( m_bottomCanvasWin, mousePos ) )
@@ -215,66 +249,53 @@ namespace PaintLite
         if( m_resizeCanvasWinFlag )
         {
             m_resizeEndPoint = Point( x, y );
+
+            if( HDC hWinDC = GetDC( m_hWnd ) )
+            {
+                if( m_memDC = CreateCompatibleDC( hWinDC ) )
+                {
+                    RECT clientRect;
+                    GetClientRect( m_hWnd, &clientRect );
+                    if( m_memBitmap = CreateCompatibleBitmap( hWinDC, clientRect.right, clientRect.bottom ) )
+                    {
+                        DeleteObject( SelectObject( m_memDC, m_memBitmap ) );
+                        ReleaseDC( m_hWnd, hWinDC );
+                    }
+                    ReleaseDC( m_hWnd, hWinDC );
+                }
+            }
+
             auto styles = GetWindowLong( m_hWnd, GWL_STYLE );
             SetWindowLong( m_hWnd, GWL_STYLE, styles | WS_CLIPCHILDREN );
+
+            invalidateRect( nullptr );
         }
     }
+
     void MainWindow::onLBtnUp( HWND hWnd, int x, int y, UINT keyFlags )
     {
         ReleaseCapture();
 
         if( m_resizeCanvasWinFlag )
         {
-            int width = m_resizeEndPoint.X - m_canvasRect.X;
-            int height = m_resizeEndPoint.Y - m_canvasRect.Y;
-
-            if( m_resizeType == eRR_BOTTOM )
-            {
-                width = m_canvasRect.Width;
-            }
-            else if( m_resizeType == eRR_RIGHT )
-            {
-                height = m_canvasRect.Height;
-            }
-
-            RECT cr = { 0, 0, width, height };
-            calculateCanvasWinRect( cr, getToolbarHeight() );
-
-            SetWindowPos( m_canvasWin.getWindowHandle(), 0, m_canvasRect.X, 
-                                                            m_canvasRect.Y, 
-                                                            m_canvasRect.Width, 
-                                                            m_canvasRect.Height,
-                                                            SWP_SHOWWINDOW );
-            calculateResizeRectsPos();
-
             m_resizeCanvasWinFlag = false;
             m_resizeType = eRR_NONE;
+
+            DeleteObject( m_memDC );
+            DeleteObject( m_memBitmap );
 
             auto styles = GetWindowLong( m_hWnd, GWL_STYLE );
             SetWindowLong( m_hWnd, GWL_STYLE, styles ^ WS_CLIPCHILDREN );
 
             invalidateRect( nullptr );
-        }
-    }
-
-    void MainWindow::onRBtnDown( HWND hWnd, bool dblClick, int x, int y, UINT keyFlags )
-    {
-        if( m_resizeCanvasWinFlag )
-        {
-            m_resizeCanvasWinFlag = false;
-            m_resizeType = eRR_NONE;
-            invalidateRect( nullptr );
-
-            auto styles = GetWindowLong( m_hWnd, GWL_STYLE );
-            SetWindowLong( m_hWnd, GWL_STYLE, styles ^ WS_CLIPCHILDREN );
         }
     }
 
     void MainWindow::onClose( HWND hWnd )
     {
-        std::wstring mbText{ L"Are you sure you want to close this app?" };
         if( !m_canvasWin.isSaved() )
         {
+            std::wstring mbText{ L"Are you sure you want to close this app?" };
             if( MessageBox( hWnd, mbText.c_str(), APP_NAME.c_str(), MB_YESNO | MB_ICONQUESTION ) == IDYES )
             {
                 DestroyWindow( hWnd );
@@ -320,7 +341,7 @@ namespace PaintLite
         // TBBUTTON structure is a parameter of the function.
         SendMessage( m_toolbar, TB_BUTTONSTRUCTSIZE, static_cast<WPARAM>( sizeof( TBBUTTON ) ), 0 );
 
-        const int numButtons = 19; // 13 buttons + separators
+        constexpr int numButtons = 1 + eTID_THICK_4 - eTID_NEW; // lastIndex - firstIndex
         m_toolbarIcons = loadToolbarIcons( numButtons );
         SendMessage( m_toolbar, TB_SETIMAGELIST, (WPARAM)0, reinterpret_cast<LPARAM>( m_toolbarIcons ) );
         
@@ -340,7 +361,6 @@ namespace PaintLite
         }
 
         //setting individual properties
-
         int btnIndex = 0;
         tbButtons[btnIndex].iBitmap = imgInx++;
         tbButtons[btnIndex].idCommand = eTID_NEW;
@@ -401,23 +421,15 @@ namespace PaintLite
         ++btnIndex;
         tbButtons[btnIndex].fsState = NULL;
         tbButtons[btnIndex].fsStyle = BTNS_SEP;
-        
-        ++btnIndex;
-        tbButtons[btnIndex].iBitmap = imgInx++;
-        tbButtons[btnIndex].idCommand = eTID_PALETTE;
-        tbButtons[btnIndex].iString = reinterpret_cast<INT_PTR>( L"Palette" );
 
         ++btnIndex;
         tbButtons[btnIndex].iBitmap = imgInx++;
-        tbButtons[btnIndex].idCommand = eTID_MAIN_COLOR;        
-        tbButtons[btnIndex].fsState |= TBSTATE_CHECKED;
-        tbButtons[btnIndex].fsStyle |= BTNS_CHECKGROUP;
+        tbButtons[btnIndex].idCommand = eTID_MAIN_COLOR;  
         tbButtons[btnIndex].iString = reinterpret_cast<INT_PTR>( L"Color 1" );
 
         ++btnIndex;
         tbButtons[btnIndex].iBitmap = imgInx++;
         tbButtons[btnIndex].idCommand = eTID_ADDITIONAL_COLOR;
-        tbButtons[btnIndex].fsStyle |= BTNS_CHECKGROUP;
         tbButtons[btnIndex].iString = reinterpret_cast<INT_PTR>( L"Color 2" );
         
         //SEPARATOR
@@ -469,7 +481,7 @@ namespace PaintLite
             return nullptr;
                
         const int imagesIDs[] = { ID_NEW, ID_LOAD, ID_SAVE, ID_SAVE_AS, ID_PENSIL, ID_LINE, 
-                                  ID_RECT, ID_ELLIPSE, ID_ERASER, ID_PALETTE };
+                                  ID_RECT, ID_ELLIPSE, ID_ERASER };
 
         HBITMAP hBitmap = nullptr;
         for( const int id : imagesIDs )
@@ -510,12 +522,12 @@ namespace PaintLite
         {
             btnBkgndIcon = createColorBitmap( RGB( 255, 255, 255 ), width, height );
             Graphics g( btnBkgndIcon );
-            pen.SetWidth( array[idx] );
+            pen.SetWidth( static_cast<REAL>( array[idx] ) );
             g.DrawLine( &pen, xOffset, y, width - xOffset, y );
             btnBkgndIcon->GetHBITMAP( {}, &hBitmap );
             ImageList_Add( toolbarIcons, hBitmap, 0 );
             DeleteObject( hBitmap );
-            delete btnBkgndIcon;
+            delete btnBkgndIcon; 
         }        
         
         return toolbarIcons;
@@ -525,8 +537,10 @@ namespace PaintLite
     {
         Bitmap* bitmap = new Bitmap( width, height );
         Graphics g( bitmap );
+
         Color newColor;
         newColor.SetFromCOLORREF( color );
+
         SolidBrush brush( newColor );
         Pen pen( Color::Black );
 
@@ -551,65 +565,25 @@ namespace PaintLite
         graphics->FillRectangle( &whiteBrush, m_bottomRightCanvasWin );
         graphics->FillRectangle( &whiteBrush, m_rightCanvasWin );
 
-        graphics->DrawRectangle( &pen, m_bottomCanvasWin.X, m_bottomCanvasWin.Y,
-                         m_bottomCanvasWin.Width - 1, m_bottomCanvasWin.Height - 1 ); // -1 pen width
+        graphics->DrawRectangle( &pen,
+                                 m_bottomCanvasWin.X, 
+                                 m_bottomCanvasWin.Y,
+                                 m_bottomCanvasWin.Width - 1, 
+                                 m_bottomCanvasWin.Height - 1 ); // -1 pen width
 
-        graphics->DrawRectangle( &pen, m_bottomRightCanvasWin.X, m_bottomRightCanvasWin.Y,
-                         m_bottomRightCanvasWin.Width - 1, m_bottomRightCanvasWin.Height - 1 ); // -1 pen width
+        graphics->DrawRectangle( &pen, 
+                                 m_bottomRightCanvasWin.X, 
+                                 m_bottomRightCanvasWin.Y,
+                                 m_bottomRightCanvasWin.Width - 1, 
+                                 m_bottomRightCanvasWin.Height - 1 ); // -1 pen width
 
-        graphics->DrawRectangle( &pen, m_rightCanvasWin.X, m_rightCanvasWin.Y,
-                         m_rightCanvasWin.Width - 1, m_rightCanvasWin.Height - 1 ); // -1 pen width
+        graphics->DrawRectangle( &pen, 
+                                 m_rightCanvasWin.X, 
+                                 m_rightCanvasWin.Y,
+                                 m_rightCanvasWin.Width - 1, 
+                                 m_rightCanvasWin.Height - 1 ); // -1 pen width
     }
-
-    void MainWindow::drawResizeArea( Gdiplus::Graphics* graphics ) const noexcept
-    {
-        Pen pen( Color::Black );
-        pen.SetDashStyle( DashStyleDashDot );
-
-        if( m_resizeType == eRR_BOTTOM_RIGHT )
-        {
-            graphics->DrawRectangle( &pen, 
-                                     m_canvasRect.X, 
-                                     m_canvasRect.Y,
-                                     m_resizeEndPoint.X - m_canvasRect.X, 
-                                     m_resizeEndPoint.Y - m_canvasRect.Y );
-        }
-        else if( m_resizeType == eRR_BOTTOM )
-        {
-            graphics->DrawRectangle( &pen, 
-                                     m_canvasRect.X, 
-                                     m_canvasRect.Y,
-                                     m_canvasRect.Width, 
-                                     m_resizeEndPoint.Y - m_canvasRect.Y );
-        }
-        else if( m_resizeType == eRR_RIGHT )
-        {
-            graphics->DrawRectangle( &pen,
-                                     m_canvasRect.X, 
-                                     m_canvasRect.Y,
-                                     m_resizeEndPoint.X - m_canvasRect.X,
-                                     m_canvasRect.Height );
-        }
-    }
-
-    const int MainWindow::getToolbarHeight() const noexcept
-    {
-        RECT rcToolbarWin;
-        GetWindowRect( m_toolbar, &rcToolbarWin );
-        return rcToolbarWin.bottom - rcToolbarWin.top;
-    }
-
-    void MainWindow::calculateCanvasWinRect( RECT& workArea, const int toolbarHeight ) noexcept
-    {
-         // client area rect excluding toolbar height
-        workArea.top += toolbarHeight;
-
-        const int topLeftOffset = 5;
-        const int bottomRightOffset = 8;
-        m_canvasRect = Rect{ workArea.left + topLeftOffset, workArea.top + topLeftOffset,
-                         workArea.right - bottomRightOffset * 2,  workArea.bottom - bottomRightOffset * 2 };
-    }
-
+    
     void MainWindow::calculateResizeRectsPos() noexcept
     {
         const int toolbarHeight = getToolbarHeight();
@@ -618,21 +592,27 @@ namespace PaintLite
         const int sizeRectOffset = 1;
 
         m_bottomCanvasWin = Rect{ ( m_canvasRect.Width - sizeRectWidth ) / 2,
-                                  m_canvasRect.Height + sizeRectOffset + sizeRectWidth + toolbarHeight,
-                                  sizeRectWidth,
-                                  sizeRectWidth };
+                                    m_canvasRect.Height + sizeRectOffset + sizeRectWidth + toolbarHeight,
+                                    sizeRectWidth,
+                                    sizeRectWidth };
 
         m_rightCanvasWin = Rect{ m_canvasRect.Width + sizeRectOffset + sizeRectWidth,
-                                 ( m_canvasRect.Height - sizeRectWidth ) / 2 + toolbarHeight,
-                                 sizeRectWidth,
-                                 sizeRectWidth };
+                                    ( m_canvasRect.Height - sizeRectWidth ) / 2 + toolbarHeight,
+                                    sizeRectWidth,
+                                    sizeRectWidth };
 
         m_bottomRightCanvasWin = Rect{ m_canvasRect.Width + sizeRectOffset + sizeRectWidth,
-                                       m_canvasRect.Height + sizeRectOffset + sizeRectWidth + toolbarHeight,
-                                       sizeRectWidth,
-                                       sizeRectWidth };
+                                        m_canvasRect.Height + sizeRectOffset + sizeRectWidth + toolbarHeight,
+                                        sizeRectWidth,
+                                        sizeRectWidth };
+        
     }
 
-
+    int MainWindow::getToolbarHeight() const noexcept
+    {
+        RECT rcToolbarWin;
+        GetWindowRect( m_toolbar, &rcToolbarWin );
+        return rcToolbarWin.bottom - rcToolbarWin.top;
+    }
 
 } //namespace PaintLite

@@ -30,8 +30,10 @@ namespace PaintLite
 
     protected:
         virtual void initWndClass( WNDCLASS& outWndClass ) const override;
-        
+
+        virtual bool onCreate( HWND hWnd, LPCREATESTRUCT lpCreateStruct );
         virtual void onCommand( HWND hWnd, int id, HWND hwndCtl, UINT codeNotify );
+        virtual void onToolbarCommand( int id, COLORREF color );
         virtual void onPaint( HWND hWnd );
         virtual void onSize( HWND hWnd, UINT state, int width, int height );
         virtual void onMouseMove( HWND hWnd, int x, int y, UINT keyFlags );
@@ -45,6 +47,9 @@ namespace PaintLite
         Canvas m_drawerCanvas;
         Drawer m_drawer;
         DrawingToolkit m_toolkit;
+
+        HDC m_memDC;
+        HBITMAP m_memBitmap;
 
         bool m_saveState{ false };
     };

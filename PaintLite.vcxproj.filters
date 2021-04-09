@@ -25,6 +25,18 @@
     <Filter Include="Header Files\Drawer\DrawerTools">
       <UniqueIdentifier>{ad3ae3cd-1eff-406f-8031-d6b885adcce7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Utils">
+      <UniqueIdentifier>{5502d88a-b999-4bee-8207-03912539d9aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils">
+      <UniqueIdentifier>{2073ae2f-e8dc-4c44-8375-b4034774e81f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Windows">
+      <UniqueIdentifier>{5fc6ce59-18ad-4fd4-a988-72a155c8eaf2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Windows">
+      <UniqueIdentifier>{68c7d722-7ac8-41c5-b21b-e84ccc87389f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\PaintLite.ico">
@@ -57,12 +69,6 @@
     <Image Include="res\eraser.bmp">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="res\dropper.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="res\palette.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="res\save.bmp">
       <Filter>Resource Files</Filter>
     </Image>
@@ -76,22 +82,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\framework.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\base_window.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\main_window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\canvas.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\gdiplus_starup_wrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pencil.h">
@@ -115,16 +106,7 @@
     <ClInclude Include="src\ellipse.h">
       <Filter>Header Files\Drawer\DrawerTools</Filter>
     </ClInclude>
-    <ClInclude Include="src\canvas_window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="res\resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\global.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\gdiplus_helper_functions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\save_load_manager.h">
@@ -133,18 +115,36 @@
     <ClInclude Include="src\eraser.h">
       <Filter>Header Files\Drawer\DrawerTools</Filter>
     </ClInclude>
+    <ClInclude Include="src\gdiplus_helper_functions.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gdiplus_starup_wrapper.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\global.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\base_window.hpp">
+      <Filter>Header Files\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\main_window.h">
+      <Filter>Header Files\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\canvas_window.h">
+      <Filter>Header Files\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\framework.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\targetver.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\main_window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\canvas.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gdiplus_starup_wrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\pencil.cpp">
@@ -168,20 +168,26 @@
     <ClCompile Include="src\ellipse.cpp">
       <Filter>Source Files\Drawer\DrawerTools</Filter>
     </ClCompile>
-    <ClCompile Include="src\canvas_window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\global.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gdiplus_helper_functions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\save_load_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\eraser.cpp">
       <Filter>Source Files\Drawer\DrawerTools</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gdiplus_helper_functions.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\global.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gdiplus_starup_wrapper.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\canvas_window.cpp">
+      <Filter>Source Files\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main_window.cpp">
+      <Filter>Source Files\Windows</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

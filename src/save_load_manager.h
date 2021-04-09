@@ -10,17 +10,20 @@ namespace PaintLite
     class SaveLoadManager
     {
     public:
-        SaveLoadManager( HWND hWnd );
-        ~SaveLoadManager();
+        SaveLoadManager( HWND hWnd ) noexcept;
+        ~SaveLoadManager() noexcept;
 
-        Gdiplus::Bitmap* load();
-        bool saveAs( Gdiplus::Bitmap& source );
-        bool save( Gdiplus::Bitmap& source );
+        Gdiplus::Bitmap* load() noexcept;
+        bool saveAs( Gdiplus::Bitmap& source ) noexcept;
+        bool save( Gdiplus::Bitmap& source ) noexcept;
+
+        static void reset() noexcept { ms_fileName.clear(); }
 
     private:
-        static WCHAR sm_fileName[300];
+        static std::wstring ms_fileName;
         HWND m_hWndOwner;
 
-        void init( OPENFILENAME& ofn );
+        void init( OPENFILENAME& ofn, LPWSTR str, UINT fileNameSize ) const noexcept;
+        bool isContainFileExtension( const std::wstring& filename ) const noexcept;
     };
 }

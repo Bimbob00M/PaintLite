@@ -31,9 +31,4 @@ namespace PaintLite
         graphics.Clear( Color::Transparent );
         graphics.DrawEllipse( m_pen, x, y, width, height );
     }
-
-    std::array<int, 4> Ellipse::getPossibleThickness() const
-    {
-        return { 1, 3, 5, 8 };
-    }
 }

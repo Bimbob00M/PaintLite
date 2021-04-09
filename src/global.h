@@ -8,7 +8,8 @@ namespace PaintLite
 {
     extern const std::wstring APP_NAME;
     
-    extern constexpr unsigned int UM_TOOLBAR_COMMAND{ WM_APP + 1 };
+    constexpr unsigned int UM_TOOLBAR_COMMAND{ WM_APP + 1 };
+    constexpr unsigned int UM_CANVAS_SIZE{ WM_APP + 2 };
         
     enum EToolbarIDs
     {
@@ -22,8 +23,7 @@ namespace PaintLite
         eTID_RECT, 
         eTID_ELLIPSE, 
         eTID_ERASER,
-        eTID_SEP_2, 
-        eTID_PALETTE,
+        eTID_SEP_2,
         eTID_MAIN_COLOR, 
         eTID_ADDITIONAL_COLOR,
         eTID_SEP_3, 

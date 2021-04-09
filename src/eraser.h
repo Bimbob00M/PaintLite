@@ -13,6 +13,6 @@ namespace PaintLite
 
         void draw( Gdiplus::Graphics& graphics, bool shiftPressed = false ) const noexcept override;
 
-        std::array<int, 4> getPossibleThickness() const override;        
+        std::array<int, 4> getPossibleThickness() const override { return { 4, 8, 15, 25 }; };        
     };
 }

@@ -12,7 +12,7 @@ namespace PaintLite
         Pencil( const Gdiplus::Pen& pen ) noexcept;
 
         void draw( Gdiplus::Graphics& graphics, bool shiftPressed = false ) const noexcept override;
-
-        std::array<int, 4> getPossibleThickness() const override;                
+        
+        std::array<int, 4> getPossibleThickness() const override { return { 1, 2, 3, 4 }; };                
     };
 }

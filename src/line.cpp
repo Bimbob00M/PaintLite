@@ -21,9 +21,4 @@ namespace PaintLite
         graphics.Clear( Color::Transparent );
         graphics.DrawLine( m_pen, m_startPoint, m_currMousePos );
     }
-
-    std::array<int, 4> Line::getPossibleThickness() const
-    {
-        return { 1, 3, 5, 8 };
-    }
 }

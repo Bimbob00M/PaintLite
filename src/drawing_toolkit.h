@@ -9,6 +9,7 @@
 namespace PaintLite
 {
     using TToolsSet = std::unordered_map<EToolbarIDs, std::unique_ptr<DrawingTool>>;
+
     class DrawingToolkit
     {
     public:

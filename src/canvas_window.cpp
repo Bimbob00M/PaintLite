@@ -19,6 +19,8 @@ namespace PaintLite
         , m_drawerCanvas{ Color::Transparent }
         , m_drawer{}
         , m_toolkit{}
+        , m_memDC{}
+        , m_memBitmap{}
     {
         if( auto tool = m_toolkit.getTool( eTID_PENCIL ) )
         {
@@ -30,94 +32,7 @@ namespace PaintLite
     {
         switch( msg )
         {
-            case UM_TOOLBAR_COMMAND:
-            {
-                auto id = LOWORD( wParam );
-                switch( id )
-                {
-                    case eTID_LOAD:
-                    {
-                        SaveLoadManager slm( m_hWnd );
-                        if( auto loadedBitmap = slm.load() )
-                        {
-                            if( Ok == loadedBitmap->GetLastStatus() )
-                            {
-                                m_saveState = false;
-                                clear();
-                                Graphics g( m_canvas.get() );
-                                g.DrawImage( loadedBitmap, 0, 0 );
-                                invalidateRect( nullptr );
-                            }
-                            delete loadedBitmap;
-                        }
-                        break;
-                    }
-                    case eTID_SAVE:
-                    {
-                        SaveLoadManager slm( m_hWnd );
-
-                        m_saveState = m_saveState ? slm.save( *m_canvas.get() ) : slm.saveAs( *m_canvas.get() );
-                                                
-                        if( !m_saveState )
-                            MessageBeep( MB_ICONERROR );
-                            
-                        break;
-                    }
-                    case eTID_SAVE_AS:
-                    {
-                        SaveLoadManager slm( m_hWnd );
-
-                        m_saveState =  slm.saveAs( *m_canvas.get() );
-
-                        if( !m_saveState )
-                            MessageBeep( MB_ICONERROR );
-                        
-                        break;
-                    }
-                    case eTID_PENCIL:
-                    case eTID_LINE:
-                    case eTID_RECT:
-                    case eTID_ELLIPSE:
-                    case eTID_ERASER:
-                    {
-                        if( auto tool = m_toolkit.getTool( static_cast<EToolbarIDs>( id ) ) )
-                        {
-                            if( eTID_ERASER == id  )
-                                m_drawer.useAdditionalColor( true );
-                            else
-                                m_drawer.useAdditionalColor( false );
-                            m_drawer.setTool( tool );
-                        }
-                        break;
-                    }
-                    case eTID_PALETTE:
-                    {
-                        Color newColor;
-                        newColor.SetFromCOLORREF( static_cast<COLORREF>( lParam ) );
-                        
-                        if( HIWORD( wParam ) ) //if mainColor button checked                        
-                            m_drawer.setMainColor( newColor );
-                        else
-                            m_drawer.setAdditionalColor( newColor );
-                        
-                        break;
-                    }
-                    case eTID_THICK_1:
-                    case eTID_THICK_2:
-                    case eTID_THICK_3:
-                    case eTID_THICK_4:
-                    {
-                        const auto thicknessBtnId = id - eTID_THICK_1;
-                        if( m_drawer.getTool() )
-                        {
-                            auto newThickness = m_drawer.getTool()->getPossibleThickness()[thicknessBtnId];
-                            m_drawer.getTool()->setThickness( newThickness );
-                        }
-                        break;
-                    }
-                }
-            }
-
+            HANDLE_MSG( m_hWnd, WM_CREATE, onCreate );
             HANDLE_MSG( m_hWnd, WM_COMMAND, onCommand );
             HANDLE_MSG( m_hWnd, WM_PAINT, onPaint );
             HANDLE_MSG( m_hWnd, WM_SIZE, onSize );
@@ -127,9 +42,15 @@ namespace PaintLite
             HANDLE_MSG( m_hWnd, WM_RBUTTONDOWN, onRBtnDown );
             HANDLE_MSG( m_hWnd, WM_DESTROY, onDestroy );
 
+            case UM_TOOLBAR_COMMAND:            
+                onToolbarCommand( LOWORD( wParam ), static_cast<COLORREF>( lParam ) );
+                break;
+            
             default:
                 return DefWindowProc( m_hWnd, msg, wParam, lParam );
         }
+
+        return 0L;
     }
 
     LRESULT CanvasWindow::clear() noexcept
@@ -146,6 +67,27 @@ namespace PaintLite
         outWndClass.hCursor = LoadCursor( NULL, IDC_CROSS );        
     }
 
+    bool CanvasWindow::onCreate( HWND hWnd, LPCREATESTRUCT lpCreateStruct )
+    {
+        if( HDC hWinDC = GetDC( m_hWnd ) )
+        {
+            if( m_memDC = CreateCompatibleDC( hWinDC ) )
+            {
+                RECT clientRect;
+                GetClientRect( m_hWnd, &clientRect );
+                if( m_memBitmap = CreateCompatibleBitmap( hWinDC, clientRect.right, clientRect.bottom) )
+                {
+                    DeleteObject( SelectObject( m_memDC, m_memBitmap ) );
+                    ReleaseDC( m_hWnd, hWinDC );
+                    return true;
+                }
+                ReleaseDC( m_hWnd, hWinDC );
+            }
+        }
+
+        return false;
+    }
+
     void CanvasWindow::onCommand( HWND hWnd, int id, HWND hwndCtl, UINT codeNotify )
     {
         switch( id )
@@ -156,36 +98,152 @@ namespace PaintLite
         }
     }
 
+    void CanvasWindow::onToolbarCommand( int id, COLORREF color )
+    {
+        switch( id )
+        {
+            case eTID_NEW:
+            {
+                SaveLoadManager::reset();
+                clear();
+                invalidateRect( nullptr );
+
+                break;
+            }
+            case eTID_LOAD:
+            {
+                SaveLoadManager slm( m_hWnd );
+                if( auto loadedBitmap = slm.load() )
+                {
+                    if( Ok == loadedBitmap->GetLastStatus() )
+                    {
+                        m_saveState = false;
+
+                        auto newWidth = loadedBitmap->GetWidth();
+                        auto newHeight = loadedBitmap->GetHeight();
+                        m_canvas.resize( newWidth, newHeight );
+                        m_drawerCanvas.resize( newWidth, newHeight );
+                        clear();
+                        SetWindowPos( m_hWnd, nullptr, 0, 0, newWidth, newHeight, SWP_NOMOVE );
+
+                        if( auto hParent = GetParent( m_hWnd ) )
+                        {
+                            SendMessage( hParent, UM_CANVAS_SIZE, newWidth, newHeight );
+                        }
+
+                        Graphics g( m_canvas.get() );
+                        g.DrawImage( loadedBitmap, 0, 0 );
+                        invalidateRect( nullptr );
+                    }
+                    delete loadedBitmap;
+                }
+                break;
+            }
+            case eTID_SAVE:
+            {
+                SaveLoadManager slm( m_hWnd );
+
+                //m_saveState = m_saveState ? slm.save( *m_canvas.get() ) : slm.saveAs( *m_canvas.get() );
+                m_saveState = slm.save( *m_canvas.get() );
+
+                if( !m_saveState )
+                    MessageBeep( MB_ICONERROR );
+
+                break;
+            }
+            case eTID_SAVE_AS:
+            {
+                SaveLoadManager slm( m_hWnd );
+
+                if( !m_saveState )
+                {
+                    m_saveState = slm.saveAs( *m_canvas.get() );
+                    if( !m_saveState )
+                        MessageBeep( MB_ICONERROR );
+                }
+                else
+                {
+                    slm.saveAs( *m_canvas.get() );
+                }
+
+                break;
+            }
+            case eTID_PENCIL:
+            case eTID_LINE:
+            case eTID_RECT:
+            case eTID_ELLIPSE:
+            case eTID_ERASER:
+            {
+                if( auto tool = m_toolkit.getTool( static_cast<EToolbarIDs>( id ) ) )
+                {
+                    if( eTID_ERASER == id )
+                        m_drawer.useAdditionalColor( true );
+                    else
+                        m_drawer.useAdditionalColor( false );
+                    m_drawer.setTool( tool );
+                }
+                break;
+            }
+            case eTID_MAIN_COLOR:
+            case eTID_ADDITIONAL_COLOR:
+            {
+                Color newColor;
+                newColor.SetFromCOLORREF( color );
+
+                if( id == eTID_MAIN_COLOR )
+                    m_drawer.setMainColor( newColor );
+                else
+                    m_drawer.setAdditionalColor( newColor );
+
+                break;
+            }
+            case eTID_THICK_1:
+            case eTID_THICK_2:
+            case eTID_THICK_3:
+            case eTID_THICK_4:
+            {
+                const auto thicknessBtnId = id - eTID_THICK_1;
+                if( auto tool = m_drawer.getTool() )
+                {
+                    auto newThickness = tool->getPossibleThickness()[thicknessBtnId];
+                    tool->setThickness( static_cast<REAL>( newThickness ) );
+                }
+                break;
+            }
+        }
+    }
+
     void CanvasWindow::onPaint( HWND hWnd )
     {
         PAINTSTRUCT ps;
         BeginPaint( hWnd, &ps );
-        
+
         const int width = ps.rcPaint.right - ps.rcPaint.left;
         const int height = ps.rcPaint.bottom - ps.rcPaint.top;
+        
+        Graphics g( m_memDC ? m_memDC : ps.hdc );
 
-        HDC hMemDC = CreateCompatibleDC( ps.hdc );
-        HBITMAP hMemBitmap = CreateCompatibleBitmap( ps.hdc, width, height );
-        HGDIOBJ oldBitmap = SelectObject( hMemDC, hMemBitmap );
-
-        Graphics g( hMemDC );
         g.SetSmoothingMode( SmoothingModeHighQuality );
         g.DrawImage( m_canvas.get(), 0, 0 );
 
         if( m_drawer.isDrawing() )
             g.DrawImage( m_drawerCanvas.get(), 0, 0 );
 
-        BitBlt( ps.hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY );
-
-        SelectObject( hMemDC, oldBitmap );
-        DeleteObject( hMemBitmap );
-        DeleteDC( hMemDC );
+        if( m_memDC )
+            BitBlt( ps.hdc, 0, 0, width, height, m_memDC, 0, 0, SRCCOPY );
 
         EndPaint( hWnd, &ps );
     }
 
     void CanvasWindow::onSize( HWND hWnd, UINT state, int width, int height )
     {
+        if( auto hWinDC = GetDC( m_hWnd ) )
+        {
+            DeleteObject( m_memBitmap );
+            m_memBitmap = CreateCompatibleBitmap( m_memDC, width, height );
+            DeleteObject( SelectObject( m_memDC, m_memBitmap ) );
+            ReleaseDC( m_hWnd, hWinDC );
+        }
         m_canvas.resize( width, height, true );
         m_drawerCanvas.resize( width, height );
     }
@@ -252,6 +310,8 @@ namespace PaintLite
 
     void CanvasWindow::onDestroy( HWND hWnd )
     {
+        DeleteObject( m_memDC );
+        DeleteObject( m_memBitmap );
         DestroyWindow( hWnd );
     }
 }
