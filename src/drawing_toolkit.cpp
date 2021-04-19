@@ -14,10 +14,12 @@ namespace PaintLite
         Pen defaultPen( Color::Black );
         defaultPen.SetLineCap( LineCapRound, LineCapRound, DashCapFlat );
 
+        SolidBrush fillBrush( Color::Transparent );
+
         m_tools[eTID_PENCIL] = std::make_unique<Pencil>( Pencil( defaultPen ) );
         m_tools[eTID_LINE] = std::make_unique<Line>( Line( defaultPen ) );
-        m_tools[eTID_RECT] = std::make_unique<Rectangle>( Rectangle( defaultPen ) );
-        m_tools[eTID_ELLIPSE] = std::make_unique<Ellipse>( Ellipse( defaultPen ) );
+        m_tools[eTID_RECT] = std::make_unique<Rectangle>( Rectangle( defaultPen, &fillBrush ) );
+        m_tools[eTID_ELLIPSE] = std::make_unique<Ellipse>( Ellipse( defaultPen, &fillBrush ) );
         m_tools[eTID_ERASER] = std::make_unique<Eraser>( Eraser( defaultPen ) );
     }
     

@@ -9,31 +9,39 @@ namespace PaintLite
 
     Drawer::~Drawer() noexcept
     {
-        m_pTool = nullptr;
+        m_activeTool = nullptr;
     }
 
     void Drawer::draw( Graphics& graphics, const Gdiplus::Point& mousePos ) const noexcept
     {
-        if( m_pTool )
+        if( m_activeTool )
         {
-            if( m_useAdditionalColorFlag )
-                m_pTool->getPen().SetColor( m_additionalColor );
+            if( m_additionalColorFlag )
+                m_activeTool->getPen().SetColor( m_additionalColor );
             else
-                m_pTool->getPen().SetColor( m_mainColor );
+                m_activeTool->getPen().SetColor( m_mainColor );
+            
+            if( auto brush = m_activeTool->getBrush() )
+            {
+                if( m_fillFlag )
+                    brush->SetColor( m_additionalColor );
+                else
+                    brush->SetColor( Color::Transparent );
+            }
 
-            m_pTool->setCurrMousePos( mousePos );
-            m_pTool->draw( graphics, m_shiftKeyState );
-            m_pTool->setPrevMousePos( mousePos );
+            m_activeTool->setCurrMousePos( mousePos );
+            m_activeTool->draw( graphics, m_shiftKeyState );
+            m_activeTool->setPrevMousePos( mousePos );
         }
     }
     
     void Drawer::startDrawing( const Gdiplus::Point& startPoint ) noexcept
     {
-        if( m_pTool )
+        if( m_activeTool )
         {
-            m_pTool->setStartPoint( startPoint );
-            m_pTool->setCurrMousePos( startPoint );
-            m_pTool->setPrevMousePos( startPoint );
+            m_activeTool->setStartPoint( startPoint );
+            m_activeTool->setCurrMousePos( startPoint );
+            m_activeTool->setPrevMousePos( startPoint );
             m_drawingFlag = true;
             m_cancelFlag = false;
         }
@@ -41,9 +49,9 @@ namespace PaintLite
 
     void Drawer::finishDrawing( const Gdiplus::Point& endPoint ) noexcept
     {
-        if( m_pTool )
+        if( m_activeTool )
         {
-            m_pTool->setEndPoint( endPoint );
+            m_activeTool->setEndPoint( endPoint );
             m_drawingFlag = false;
             m_shiftKeyState = false;
         }

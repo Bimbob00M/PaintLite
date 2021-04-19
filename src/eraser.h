@@ -8,7 +8,7 @@ namespace PaintLite
     {
     public:
         Eraser() noexcept;
-        Eraser( const Gdiplus::Color& color, const Gdiplus::REAL width = 1.F ) noexcept;
+        Eraser( const Gdiplus::Color& color, const Gdiplus::REAL width = 4.F ) noexcept;
         Eraser( const Gdiplus::Pen& pen ) noexcept;
 
         void draw( Gdiplus::Graphics& graphics, bool shiftPressed = false ) const noexcept override;

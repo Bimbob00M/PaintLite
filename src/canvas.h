@@ -26,14 +26,21 @@ namespace PaintLite
 
         virtual ~Canvas();
 
-        Gdiplus::Status resize( const UINT width, const UINT height, const bool expandOnly = false );
+        Gdiplus::Status resize( const UINT width, 
+                                const UINT height, 
+                                const bool expandOnly = false, 
+                                const int xDrawOffset = 0, 
+                                const int yDrawOffset = 0 );
+
+        Gdiplus::Status scale( double scalingFactor );
+
         inline Gdiplus::Status clear( const Gdiplus::Color& bkgndColor = Gdiplus::Color::White ) noexcept;
 
-        inline Gdiplus::Bitmap* get() const { return m_pBitmap; };
-        inline Gdiplus::Rect getRect() const noexcept { return Gdiplus::Rect( 0, 0, m_pBitmap->GetWidth(), m_pBitmap->GetWidth() ); };
+        inline Gdiplus::Bitmap* get() const { return m_canvasBitmap; };
+        inline Gdiplus::Rect getRect() const noexcept { return Gdiplus::Rect( 0, 0, m_canvasBitmap->GetWidth(), m_canvasBitmap->GetWidth() ); };
 
     private:
-        Gdiplus::Bitmap* m_pBitmap{ nullptr };
+        Gdiplus::Bitmap* m_canvasBitmap{ nullptr };
         Gdiplus::Color m_bkgndColor{ Gdiplus::Color::White };
 
         Canvas( const Canvas& ) = delete;

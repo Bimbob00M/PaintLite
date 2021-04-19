@@ -16,8 +16,8 @@ int APIENTRY wWinMain( _In_ HINSTANCE hInstance,
     UINT_PTR gdiplusToken{};
     PaintLite::GdiplusStarupWrapper gdiplus( gdiplusToken );
 
-    int screenWidth = GetSystemMetrics( SM_CXVIRTUALSCREEN );
-    int screenHeight = GetSystemMetrics( SM_CYVIRTUALSCREEN );
+    int screenWidth = GetSystemMetrics( SM_CXSCREEN );
+    int screenHeight = GetSystemMetrics( SM_CYSCREEN );
     int winWidth = screenWidth / 2;
     int winHeight = screenHeight / 2;
 

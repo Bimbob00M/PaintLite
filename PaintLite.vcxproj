@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <Image Include="res\fill.bmp" />
+    <Image Include="res\fill.png" />
     <Image Include="res\save.bmp" />
     <Image Include="res\save_as.bmp" />
     <Image Include="res\brush.bmp" />

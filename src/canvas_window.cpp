@@ -3,6 +3,8 @@
 #include <commctrl.h>
 #include <gdiplus.h>
 
+#include <algorithm>
+
 #include "base_window.hpp"
 #include "canvas_window.h"
 #include "global.h"
@@ -15,12 +17,7 @@ namespace PaintLite
 {
     CanvasWindow::CanvasWindow()
         : BaseWindow{}
-        , m_canvas{}
         , m_drawerCanvas{ Color::Transparent }
-        , m_drawer{}
-        , m_toolkit{}
-        , m_memDC{}
-        , m_memBitmap{}
     {
         if( auto tool = m_toolkit.getTool( eTID_PENCIL ) )
         {
@@ -39,13 +36,20 @@ namespace PaintLite
             HANDLE_MSG( m_hWnd, WM_LBUTTONDOWN, onLBtnDown );
             HANDLE_MSG( m_hWnd, WM_LBUTTONUP, onLBtnUp );
             HANDLE_MSG( m_hWnd, WM_MOUSEMOVE, onMouseMove );
+            HANDLE_MSG( m_hWnd, WM_MOUSEWHEEL, onMouseWheel );
             HANDLE_MSG( m_hWnd, WM_RBUTTONDOWN, onRBtnDown );
             HANDLE_MSG( m_hWnd, WM_DESTROY, onDestroy );
 
             case UM_TOOLBAR_COMMAND:            
                 onToolbarCommand( LOWORD( wParam ), static_cast<COLORREF>( lParam ) );
                 break;
-            
+
+            case UM_CANVAS_SIZE:
+                m_resizedWithOffsetRedraw = true;
+                m_xDrawOffset = wParam;
+                m_yDrawOffset = lParam;
+                break;
+
             default:
                 return DefWindowProc( m_hWnd, msg, wParam, lParam );
         }
@@ -60,7 +64,7 @@ namespace PaintLite
         return main && additional;
     }
 
-    void CanvasWindow::initWndClass( WNDCLASS& outWndClass ) const
+    void CanvasWindow::initWndClass( WNDCLASSEX& outWndClass ) const
 {
         BaseWindow::initWndClass( outWndClass );
 
@@ -98,7 +102,7 @@ namespace PaintLite
         }
     }
 
-    void CanvasWindow::onToolbarCommand( int id, COLORREF color )
+    void CanvasWindow::onToolbarCommand( int id, UINT codeNotify )
     {
         switch( id )
         {
@@ -106,6 +110,7 @@ namespace PaintLite
             {
                 SaveLoadManager::reset();
                 clear();
+                resetScale();
                 invalidateRect( nullptr );
 
                 break;
@@ -113,6 +118,7 @@ namespace PaintLite
             case eTID_LOAD:
             {
                 SaveLoadManager slm( m_hWnd );
+
                 if( auto loadedBitmap = slm.load() )
                 {
                     if( Ok == loadedBitmap->GetLastStatus() )
@@ -124,15 +130,15 @@ namespace PaintLite
                         m_canvas.resize( newWidth, newHeight );
                         m_drawerCanvas.resize( newWidth, newHeight );
                         clear();
-                        SetWindowPos( m_hWnd, nullptr, 0, 0, newWidth, newHeight, SWP_NOMOVE );
+                        resetScale();
 
                         if( auto hParent = GetParent( m_hWnd ) )
                         {
-                            SendMessage( hParent, UM_CANVAS_SIZE, newWidth, newHeight );
+                            PostMessage( hParent, UM_CANVAS_SIZE, newWidth, newHeight );
                         }
 
                         Graphics g( m_canvas.get() );
-                        g.DrawImage( loadedBitmap, 0, 0 );
+                        g.DrawImage( loadedBitmap, 0, 0, newWidth, newHeight );
                         invalidateRect( nullptr );
                     }
                     delete loadedBitmap;
@@ -143,11 +149,16 @@ namespace PaintLite
             {
                 SaveLoadManager slm( m_hWnd );
 
-                //m_saveState = m_saveState ? slm.save( *m_canvas.get() ) : slm.saveAs( *m_canvas.get() );
-                m_saveState = slm.save( *m_canvas.get() );
-
                 if( !m_saveState )
-                    MessageBeep( MB_ICONERROR );
+                {
+                    m_saveState = slm.save( *m_canvas.get() );
+                    if( !m_saveState )
+                        MessageBeep( MB_ICONERROR );
+                }
+                else
+                {
+                    slm.save( *m_canvas.get() );
+                }
 
                 break;
             }
@@ -177,9 +188,9 @@ namespace PaintLite
                 if( auto tool = m_toolkit.getTool( static_cast<EToolbarIDs>( id ) ) )
                 {
                     if( eTID_ERASER == id )
-                        m_drawer.useAdditionalColor( true );
+                        m_drawer.setAdditionalColorFlag( true );
                     else
-                        m_drawer.useAdditionalColor( false );
+                        m_drawer.setAdditionalColorFlag( false );
                     m_drawer.setTool( tool );
                 }
                 break;
@@ -188,13 +199,18 @@ namespace PaintLite
             case eTID_ADDITIONAL_COLOR:
             {
                 Color newColor;
-                newColor.SetFromCOLORREF( color );
+                newColor.SetFromCOLORREF( static_cast<COLORREF>( codeNotify ) );
 
                 if( id == eTID_MAIN_COLOR )
                     m_drawer.setMainColor( newColor );
                 else
                     m_drawer.setAdditionalColor( newColor );
 
+                break;
+            }
+            case eTID_FILL:
+            {
+                m_drawer.setFillFlag( static_cast<bool>( codeNotify ));
                 break;
             }
             case eTID_THICK_1:
@@ -222,15 +238,18 @@ namespace PaintLite
         const int height = ps.rcPaint.bottom - ps.rcPaint.top;
         
         Graphics g( m_memDC ? m_memDC : ps.hdc );
+        g.SetSmoothingMode( SmoothingModeAntiAlias );
 
-        g.SetSmoothingMode( SmoothingModeHighQuality );
-        g.DrawImage( m_canvas.get(), 0, 0 );
+        g.DrawImage( m_canvas.get(), 0, 0, m_canvas.get()->GetWidth(), m_canvas.get()->GetHeight() );
 
         if( m_drawer.isDrawing() )
-            g.DrawImage( m_drawerCanvas.get(), 0, 0 );
-
+            g.DrawImage( m_drawerCanvas.get(), 0, 0, m_drawerCanvas.get()->GetWidth(), m_drawerCanvas.get()->GetHeight() );
+                
         if( m_memDC )
-            BitBlt( ps.hdc, 0, 0, width, height, m_memDC, 0, 0, SRCCOPY );
+        {
+            PRECT rect = &ps.rcPaint;
+            BitBlt( ps.hdc, rect->left, rect->top , width, height, m_memDC, rect->left, rect->top, SRCCOPY );
+        }
 
         EndPaint( hWnd, &ps );
     }
@@ -244,26 +263,68 @@ namespace PaintLite
             DeleteObject( SelectObject( m_memDC, m_memBitmap ) );
             ReleaseDC( m_hWnd, hWinDC );
         }
-        m_canvas.resize( width, height, true );
+
+        if( !m_resizedWithOffsetRedraw )
+        {
+            m_canvas.resize( width, height );
+        }
+        else
+        {
+            m_canvas.resize( width, height, false, m_xDrawOffset, m_yDrawOffset );
+            m_resizedWithOffsetRedraw = false;
+        }
         m_drawerCanvas.resize( width, height );
     }
 
     void CanvasWindow::onMouseMove( HWND hWnd, int x, int y, UINT keyFlags )
     {
+        if( auto hParent = GetParent( m_hWnd ) )
+        {
+            PostMessage( hParent, UM_MOUSE_POS_LABEL_UPDATE, x, y );
+        }
+
         if( m_drawer.isDrawing() )
         {
             SetFocus( hWnd );
-            POINT mousePos;
-            GetCursorPos( &mousePos );
-            ScreenToClient( hWnd, &mousePos );
 
-            RECT cr;
-            GetClientRect( hWnd, &cr );
+            Point mousePos{ x, y };
 
-            m_drawer.trackShiftKeyState( keyFlags & MK_SHIFT || keyFlags & MK_CONTROL );
+            m_drawer.trackShiftKeyState( ( keyFlags & MK_SHIFT ) == MK_SHIFT );
 
             Graphics drawerGraphics( m_drawerCanvas.get() );
-            m_drawer.draw( drawerGraphics, { mousePos.x, mousePos.y } );
+            drawerGraphics.SetSmoothingMode( SmoothingModeAntiAlias );
+
+            m_drawer.draw( drawerGraphics, mousePos );
+            invalidateRect( nullptr );
+        }
+    }
+
+    void CanvasWindow::onMouseWheel( HWND hWnd, int x, int y, int delta, UINT keyFlags )
+    {
+        if( ( keyFlags & MK_CONTROL ) == MK_CONTROL )
+        {          
+
+            if( delta > 0 )
+            {
+                if( m_scalingFactor != 1.F )
+                    m_canvas.scale( 1 / m_scalingFactor );
+                m_scalingFactor = ( std::min )( 1.F, m_scalingFactor * 2 );
+
+            }
+            else
+            {
+                m_scalingFactor = ( std::max )( 0.125F, m_scalingFactor / 2 );
+                if( m_scalingFactor != 1.F )
+                    m_canvas.scale( m_scalingFactor );
+            }
+ 
+
+
+            if( auto hParent = GetParent( m_hWnd ) )
+            {
+                PostMessage( hParent, UM_CANVAS_SCALE, static_cast<int>( m_scalingFactor * 100.F ), 0 );
+            }
+
             invalidateRect( nullptr );
         }
     }
@@ -272,27 +333,29 @@ namespace PaintLite
     {
         SetCapture( hWnd );
 
-        POINT mousePos;
-        GetCursorPos( &mousePos );
-        ScreenToClient( hWnd, &mousePos );
+        Point mousePos{ x, y };
 
-        m_drawer.startDrawing( { mousePos.x, mousePos.y } );
+        m_drawer.startDrawing( mousePos );
         invalidateRect( nullptr );
     }
 
     void CanvasWindow::onLBtnUp( HWND hWnd, int x, int y, UINT keyFlags )
     {
         ReleaseCapture();
-
-        POINT mousePos;
-        GetCursorPos( &mousePos );
-        ScreenToClient( hWnd, &mousePos );
-
+        
         if( !m_drawer.isCanceled() )
         {
+            Point mousePos{ x, y };
+
             Graphics g( m_canvas.get() );
-            g.DrawImage( m_drawerCanvas.get(), 0, 0 );
-            m_drawer.finishDrawing( { mousePos.x, mousePos.y } );
+            g.SetSmoothingMode( SmoothingModeAntiAlias );
+
+            g.DrawImage( m_drawerCanvas.get(), 
+                         0, 0, 
+                         m_drawerCanvas.get()->GetWidth(), 
+                         m_drawerCanvas.get()->GetHeight() );
+
+            m_drawer.finishDrawing( mousePos );
             m_drawerCanvas.clear( Color::Transparent );
             invalidateRect( nullptr );
 
@@ -313,5 +376,12 @@ namespace PaintLite
         DeleteObject( m_memDC );
         DeleteObject( m_memBitmap );
         DestroyWindow( hWnd );
+    }
+    void CanvasWindow::resetScale() noexcept
+    {
+        if( auto hParent = GetParent( m_hWnd ) )
+        {
+            PostMessage( hParent, UM_CANVAS_SCALE, static_cast<int>( m_scalingFactor * 100.F ), 0 );
+        }
     }
 }

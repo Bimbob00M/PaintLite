@@ -12,26 +12,26 @@ namespace PaintLite
                     const int height,
                     const Color& bkgndColor,
                     const PixelFormat format ) 
-        : m_pBitmap{ new Bitmap( width, height, format ) }
+        : m_canvasBitmap{ new Bitmap( width, height, format ) }
         , m_bkgndColor{ bkgndColor }
     {
         clear( m_bkgndColor );
     }
 
     Canvas::Canvas( const std::wstring& fileName, const Color& bkgndColor, bool useEmbeddedColorManagment )
-        : m_pBitmap{ new Bitmap( fileName.c_str(), useEmbeddedColorManagment ) }
+        : m_canvasBitmap{ new Bitmap( fileName.c_str(), useEmbeddedColorManagment ) }
         , m_bkgndColor{ bkgndColor }
     {
         clear( m_bkgndColor );
     }
 
     Canvas::Canvas( Bitmap& bitmap ) 
-        : m_pBitmap{ new Bitmap( bitmap.GetWidth(), bitmap.GetHeight(), bitmap.GetPixelFormat() ) }
+        : m_canvasBitmap{ new Bitmap( bitmap.GetWidth(), bitmap.GetHeight(), bitmap.GetPixelFormat() ) }
     {        
-        if( m_pBitmap->GetLastStatus() == Ok )
+        if( m_canvasBitmap->GetLastStatus() == Ok )
         {
             Graphics g( &bitmap );
-            g.DrawImage( m_pBitmap, 0, 0 );
+            g.DrawImage( m_canvasBitmap, 0, 0 );
         }
     }
 
@@ -39,18 +39,20 @@ namespace PaintLite
 
     Canvas::~Canvas()
     {
-        delete m_pBitmap;
-        m_pBitmap = nullptr;
+        delete m_canvasBitmap;
+        m_canvasBitmap = nullptr;
     }
 
-    Status Canvas::resize( const UINT width, const UINT height, const bool expandOnly )
+    Status Canvas::resize( const UINT width, 
+                           const UINT height, 
+                           const bool expandOnly,
+                           const int xDrawOffset,
+                           const int yDrawOffset )
     {
         if( !expandOnly ||
-            !m_pBitmap ||
-            width > m_pBitmap->GetWidth() ||
-            height > m_pBitmap->GetHeight() )
+            !m_canvasBitmap )
         {
-            PixelFormat pf = m_pBitmap ? m_pBitmap->GetPixelFormat() : PixelFormat32bppPARGB;
+            PixelFormat pf = m_canvasBitmap ? m_canvasBitmap->GetPixelFormat() : PixelFormat32bppPARGB;
             Bitmap* pNewBitmap = new Bitmap( width, height, pf );
 
             if( !pNewBitmap )
@@ -58,19 +60,49 @@ namespace PaintLite
 
             Graphics g( pNewBitmap );
             g.Clear( m_bkgndColor );
-            g.DrawImage( m_pBitmap, 0, 0 );
+            g.DrawImage( m_canvasBitmap,
+                         xDrawOffset, yDrawOffset,
+                         0, 0,
+                         m_canvasBitmap ? m_canvasBitmap->GetWidth() : 0,
+                         m_canvasBitmap ? m_canvasBitmap->GetHeight() : 0,
+                         UnitPixel );
 
-            delete m_pBitmap;
+            delete m_canvasBitmap;
 
-            m_pBitmap = pNewBitmap;
+            m_canvasBitmap = pNewBitmap;
             pNewBitmap = nullptr;
         }
+        return Status::Ok;
+    }
+
+    Gdiplus::Status Canvas::scale( double scalingFactor )
+    {
+        if( !m_canvasBitmap )
+            return Status::WrongState;
+
+        PixelFormat pf = m_canvasBitmap->GetPixelFormat();
+        int width = m_canvasBitmap->GetWidth();
+        int height = m_canvasBitmap->GetHeight();
+        Bitmap* pNewBitmap = new Bitmap( width, height, pf );
+
+        if( !pNewBitmap )
+            return pNewBitmap->GetLastStatus();
+
+        Graphics g( pNewBitmap );
+        g.Clear( m_bkgndColor );
+        g.DrawImage( m_canvasBitmap, 0, 0, scalingFactor * width, scalingFactor * height );
+
+        delete m_canvasBitmap;
+
+        m_canvasBitmap = pNewBitmap;
+        pNewBitmap = nullptr;
+        
         return Status::Ok;
     }
     
     Status Canvas::clear( const Color& bkgndColor ) noexcept
     {
-        Graphics g( m_pBitmap );
+        Graphics g( m_canvasBitmap );
         return g.Clear( bkgndColor );
     }
 }

@@ -9,7 +9,7 @@ namespace PaintLite
     public:
         Ellipse() noexcept;
         Ellipse( const Gdiplus::Color& color, const Gdiplus::REAL width = 1.F ) noexcept;
-        Ellipse( const Gdiplus::Pen& pen ) noexcept;
+        Ellipse( const Gdiplus::Pen& pen, const Gdiplus::SolidBrush* fillBrush ) noexcept;
 
         void draw( Gdiplus::Graphics& graphics, bool shiftPressed = false ) const noexcept override;
     };

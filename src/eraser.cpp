@@ -14,7 +14,9 @@ namespace PaintLite
 
     Eraser::Eraser( const Gdiplus::Pen& pen ) noexcept
         : DrawingTool{ pen }
-    {}
+    {
+        setThickness( static_cast<REAL>( getPossibleThickness().front() ) );
+    }
 
     void Eraser::draw( Graphics& graphics, bool shiftPressed ) const noexcept
     {

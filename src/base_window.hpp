@@ -46,7 +46,7 @@ namespace PaintLite
         virtual PCWSTR className() const = 0;
         virtual LRESULT handleMessage( UINT uMsg, WPARAM wParam, LPARAM lParam ) = 0;
 
-        virtual void initWndClass( WNDCLASS& outWndClass ) const;
+        virtual void initWndClass( WNDCLASSEX& outWndClass ) const;
 
     private:
         BaseWindow( const BaseWindow<DERIVED_TYPE>& ) = delete;
@@ -153,7 +153,7 @@ namespace PaintLite
 
     template <class DERIVED_TYPE>
     inline void BaseWindow<DERIVED_TYPE>::initWndClass(
-        WNDCLASS& outWndClass ) const
+        WNDCLASSEX& outWndClass ) const
     {
         outWndClass.hInstance = GetModuleHandle( nullptr );
         outWndClass.lpfnWndProc = DERIVED_TYPE::windowProc;
@@ -167,10 +167,11 @@ namespace PaintLite
     template <class DERIVED_TYPE>
     inline ATOM BaseWindow<DERIVED_TYPE>::registerClass() const
     {
-        WNDCLASS wc{};
-        initWndClass( wc );
+        WNDCLASSEX wcex{}; 
+        wcex.cbSize = sizeof( WNDCLASSEX );
+        initWndClass( wcex );
 
-        return RegisterClass( &wc );
+        return RegisterClassEx( &wcex );
     }
 
 }  // namespace PaintLite

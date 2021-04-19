@@ -14,8 +14,8 @@ namespace PaintLite
         : DrawingTool{ color, width }
     {}
     
-    Rectangle::Rectangle( const Gdiplus::Pen& pen ) noexcept
-        : DrawingTool{ pen }
+    Rectangle::Rectangle( const Gdiplus::Pen& pen, const Gdiplus::SolidBrush* fillBrush ) noexcept
+        : DrawingTool{ pen, fillBrush }
     {}
 
     void Rectangle::draw( Gdiplus::Graphics& graphics, bool shiftPressed ) const noexcept
@@ -25,16 +25,22 @@ namespace PaintLite
         int width = std::abs( m_startPoint.X - m_currMousePos.X );
         int height = std::abs( m_startPoint.Y - m_currMousePos.Y );
 
-        if( shiftPressed && width < height )
+        if( shiftPressed )
         {
-            height = width;
-        }
-        else if( shiftPressed )
-        {
-            width = height;
+            if( width < height )            
+                height = width;            
+            else            
+                width = height;
+            
+            x = m_currMousePos.X > m_startPoint.X ? m_startPoint.X : m_startPoint.X - width;  
+            y = m_currMousePos.Y > m_startPoint.Y ? m_startPoint.Y : m_startPoint.Y - width;
+          
         }
 
         graphics.Clear( Color::Transparent );
+
+        if( m_fillBrush )
+            graphics.FillRectangle( m_fillBrush, x, y, width, height );
         graphics.DrawRectangle( m_pen, x, y, width, height );
     }
 }

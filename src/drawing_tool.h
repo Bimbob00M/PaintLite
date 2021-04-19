@@ -13,7 +13,7 @@ namespace PaintLite
         DrawingTool() noexcept;
         DrawingTool( const Gdiplus::Color& color, const Gdiplus::REAL width = 1.F ) noexcept;
         DrawingTool( const Gdiplus::Brush* brush, const Gdiplus::REAL width = 1.F ) noexcept;
-        DrawingTool( const Gdiplus::Pen& pen ) noexcept;
+        DrawingTool( const Gdiplus::Pen& pen, const Gdiplus::SolidBrush* fillBrush = nullptr ) noexcept;
         
         DrawingTool( const DrawingTool& tool ) noexcept;
         DrawingTool& operator=( const DrawingTool& tool ) noexcept;
@@ -25,6 +25,11 @@ namespace PaintLite
                 
         inline const Gdiplus::Pen& getPen() const noexcept { return *m_pen; }
         inline Gdiplus::Pen& getPen() noexcept { return *m_pen; }
+
+        inline void setFillBrush( const Gdiplus::SolidBrush& brush ) noexcept;
+
+        inline const Gdiplus::SolidBrush* getBrush() const noexcept { return m_fillBrush; }
+        inline Gdiplus::SolidBrush* getBrush() noexcept { return m_fillBrush; }
 
         inline void setStartPoint( const Gdiplus::Point& startPoint ) noexcept { m_startPoint = startPoint; }
         inline void setEndPoint( const Gdiplus::Point& endPoint ) noexcept { m_endPoint = endPoint; }
@@ -41,9 +46,10 @@ namespace PaintLite
         inline Gdiplus::Point getPrevMousePos() const noexcept { return m_prevMousePos; }
 
         inline Gdiplus::REAL getThickness() const noexcept { return m_thickness; }
-        
+
     protected:
         Gdiplus::Pen* m_pen{ nullptr };
+        Gdiplus::SolidBrush* m_fillBrush{ nullptr };
 
         Gdiplus::Point m_startPoint{};
         Gdiplus::Point m_endPoint{};

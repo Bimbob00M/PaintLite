@@ -75,6 +75,12 @@
     <Image Include="res\save_as.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="res\fill.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\fill.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\PaintLite.rc">
